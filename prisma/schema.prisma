@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+  user                  user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model check_ins {
+  id          String   @id
+  userId      String
+  date        DateTime
+  overallMood Float
+  completed   Boolean  @default(false)
+  steps       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date(sort: Desc)])
+}
+
+model daily_goals {
+  id          String    @id
+  userId      String
+  goal        String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime
+  user        user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, completedAt])
+  @@index([userId, completed, createdAt])
+}
+
+model profiles {
+  id                String    @id
+  userId            String    @unique
+  bio               String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+  struggles         String[]
+  struggleTimestamp DateTime?
+  struggleNotes     String?
+  inTherapy         Boolean   @default(false)
+  therapyDetails    String?
+  user              user      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime
+  updatedAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  impersonatedBy String?
+  user           user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model user {
+  id                   String        @id
+  name                 String
+  email                String        @unique
+  emailVerified        Boolean
+  image                String?
+  createdAt            DateTime
+  updatedAt            DateTime
+  role                 String?
+  banned               Boolean?
+  banReason            String?
+  banExpires           DateTime?
+  username             String?
+  displayUsername      String?
+  completedOnboarding  Boolean       @default(false)
+  onboardingStep       Int           @default(0)
+  localSecurityEnabled Boolean       @default(false)
+  account              account[]
+  check_ins            check_ins[]
+  daily_goals          daily_goals[]
+  profiles             profiles?
+  session              session[]
+}
+
+model verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+}
